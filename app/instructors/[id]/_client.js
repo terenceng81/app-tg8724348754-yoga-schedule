@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 import { format, parseISO } from 'date-fns'
 
@@ -39,7 +39,6 @@ export default function InstructorDetail() {
         </div>
       )}
       {instructor.bio && <p style={{ marginTop: 16, lineHeight: 1.7, color: 'var(--text-secondary)' }}>{instructor.bio}</p>}
-
       <h2 style={{ marginTop: 32, marginBottom: 16, fontFamily: "'DM Serif Display', serif" }}>Upcoming Classes</h2>
       {classes.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No upcoming classes scheduled.</p> : (
         <div style={{ display: 'grid', gap: 8 }}>
@@ -47,9 +46,7 @@ export default function InstructorDetail() {
             <div key={cls.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{cls.class_type}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  {format(parseISO(cls.starts_at), 'EEE, MMM d · h:mm a')} · {cls.duration}min · {cls.location_name}
-                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{format(parseISO(cls.starts_at), 'EEE, MMM d · h:mm a')} · {cls.duration}min · {cls.location_name}</div>
               </div>
               <span className={`chip ${cls.confirmed_count >= cls.capacity ? 'chip-error' : 'chip-success'}`}>
                 {cls.confirmed_count >= cls.capacity ? 'Full' : `${cls.capacity - cls.confirmed_count} spots`}

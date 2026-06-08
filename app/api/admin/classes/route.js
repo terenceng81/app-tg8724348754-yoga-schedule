@@ -14,12 +14,12 @@ export async function GET() {
   try {
     await requireAdmin()
     const classes = await sql`
-      SELECT c.*, ct.name as class_type, i.name as instructor_name, sl.name as location_name
-      FROM classes c
-      JOIN class_types ct ON ct.id = c.class_type_id
-      JOIN instructors i ON i.id = c.instructor_id
-      JOIN studio_locations sl ON sl.id = c.location_id
-      ORDER BY c.start_time DESC LIMIT 100
+      SELECT cs.*, ct.name as class_type, i.name as instructor_name, l.name as location_name
+      FROM class_sessions cs
+      JOIN class_types ct ON ct.id = cs.class_type_id
+      JOIN instructors i ON i.id = cs.instructor_id
+      JOIN locations l ON l.id = cs.location_id
+      ORDER BY cs.starts_at DESC LIMIT 100
     `
     return NextResponse.json({ classes })
   } catch (e) {

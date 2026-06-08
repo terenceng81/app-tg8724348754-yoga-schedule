@@ -9,12 +9,14 @@ export async function GET() {
 
   try {
     const entries = await sql`
-      SELECT w.id, w.position, w.status, c.class_type, c.start_time, i.name as instructor_name
-      FROM waitlist w
-      JOIN classes c ON c.id = w.class_id
-      JOIN instructors i ON i.id = c.instructor_id
-      WHERE w.user_id = ${session.user.id} AND w.status IN ('waiting', 'offered')
-      ORDER BY w.joined_at DESC
+      SELECT b.id, b.waitlist_position as position, b.status,
+             ct.name as class_type, cs.starts_at, i.name as instructor_name
+      FROM bookings b
+      JOIN class_sessions cs ON cs.id = b.session_id
+      JOIN class_types ct ON ct.id = cs.class_type_id
+      JOIN instructors i ON i.id = cs.instructor_id
+      WHERE b.owner_id = ${session.user.id} AND b.status = 'waitlisted'
+      ORDER BY b.waitlist_position ASC
     `
     return NextResponse.json({ entries })
   } catch (e) {

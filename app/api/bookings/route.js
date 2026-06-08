@@ -11,25 +11,23 @@ export async function POST(request) {
   if (!class_id) return NextResponse.json({ error: 'class_id required' }, { status: 400 })
 
   try {
-    // Start transaction
-    const [cls] = await sql`SELECT * FROM classes WHERE id = ${class_id} AND status = 'scheduled'`
+    const [cls] = await sql`SELECT * FROM class_sessions WHERE id = ${class_id} AND status = 'scheduled'`
     if (!cls) return NextResponse.json({ error: 'Class not found' }, { status: 404 })
 
-    // Check existing booking
-    const [existing] = await sql`SELECT id FROM bookings WHERE user_id = ${session.user.id} AND class_id = ${class_id} AND status != 'cancelled'`
+    const [existing] = await sql`SELECT id FROM bookings WHERE owner_id = ${session.user.id} AND session_id = ${class_id} AND status != 'cancelled'`
     if (existing) return NextResponse.json({ error: 'Already booked or waitlisted' }, { status: 409 })
 
-    if (cls.confirmed_count < cls.capacity) {
-      // Book
-      await sql`INSERT INTO bookings (user_id, class_id, status) VALUES (${session.user.id}, ${class_id}, 'confirmed')`
-      await sql`UPDATE classes SET confirmed_count = confirmed_count + 1 WHERE id = ${class_id}`
+    // Count confirmed bookings
+    const [{ count }] = await sql`SELECT COUNT(*)::int as count FROM bookings WHERE session_id = ${class_id} AND status = 'confirmed'`
+
+    if (count < cls.capacity) {
+      await sql`INSERT INTO bookings (owner_id, session_id, status, payment_status) VALUES (${session.user.id}, ${class_id}, 'confirmed', 'pending')`
       return NextResponse.json({ booked: true })
     } else {
-      // Waitlist
-      const [{ count }] = await sql`SELECT COUNT(*)::int as count FROM waitlist WHERE class_id = ${class_id} AND status = 'waiting'`
-      const position = count + 1
-      await sql`INSERT INTO waitlist (user_id, class_id, position) VALUES (${session.user.id}, ${class_id}, ${position})`
-      return NextResponse.json({ waitlisted: true, position })
+      const [{ wc }] = await sql`SELECT COUNT(*)::int as wc FROM bookings WHERE session_id = ${class_id} AND status = 'waitlisted'`
+      const pos = wc + 1
+      await sql`INSERT INTO bookings (owner_id, session_id, status, waitlist_position, payment_status) VALUES (${session.user.id}, ${class_id}, 'waitlisted', ${pos}, 'pending')`
+      return NextResponse.json({ waitlisted: true, position: pos })
     }
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 })

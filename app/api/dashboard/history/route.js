@@ -9,14 +9,14 @@ export async function GET() {
 
   try {
     const bookings = await sql`
-      SELECT b.id, b.payment_status, c.class_type, c.start_time,
-             i.name as instructor_name, a.attended
+      SELECT b.id, b.status, b.payment_status, ct.name as class_type, cs.starts_at,
+             i.name as instructor_name
       FROM bookings b
-      JOIN classes c ON c.id = b.class_id
-      JOIN instructors i ON i.id = c.instructor_id
-      LEFT JOIN attendance a ON a.booking_id = b.id
-      WHERE b.user_id = ${session.user.id} AND c.start_time < NOW()
-      ORDER BY c.start_time DESC LIMIT 50
+      JOIN class_sessions cs ON cs.id = b.session_id
+      JOIN class_types ct ON ct.id = cs.class_type_id
+      JOIN instructors i ON i.id = cs.instructor_id
+      WHERE b.owner_id = ${session.user.id} AND cs.starts_at < NOW()
+      ORDER BY cs.starts_at DESC LIMIT 50
     `
     return NextResponse.json({ bookings })
   } catch (e) {

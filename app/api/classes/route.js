@@ -8,25 +8,26 @@ export async function GET(request) {
   const instructor = searchParams.get('instructor')
 
   let query = `
-    SELECT c.*, ct.name as class_type, ct.difficulty, ct.typical_duration_mins as duration,
-           i.name as instructor_name, sl.name as location_name
-    FROM classes c
-    JOIN class_types ct ON ct.id = c.class_type_id
-    JOIN instructors i ON i.id = c.instructor_id
-    JOIN studio_locations sl ON sl.id = c.location_id
-    WHERE c.status = 'scheduled'
+    SELECT cs.*, ct.name as class_type, ct.duration_minutes as duration,
+           i.name as instructor_name, l.name as location_name,
+           (SELECT COUNT(*) FROM bookings b WHERE b.session_id = cs.id AND b.status = 'confirmed') as confirmed_count
+    FROM class_sessions cs
+    JOIN class_types ct ON ct.id = cs.class_type_id
+    JOIN instructors i ON i.id = cs.instructor_id
+    JOIN locations l ON l.id = cs.location_id
+    WHERE cs.status = 'scheduled'
   `
   const params = []
 
   if (from && to) {
-    query += ` AND c.start_time >= $1 AND c.start_time <= $2`
+    query += ` AND cs.starts_at >= $1 AND cs.starts_at <= $2`
     params.push(from, to + 'T23:59:59')
   }
   if (instructor) {
-    query += ` AND c.instructor_id = $${params.length + 1}`
+    query += ` AND cs.instructor_id = $${params.length + 1}`
     params.push(instructor)
   }
-  query += ` ORDER BY c.start_time ASC`
+  query += ` ORDER BY cs.starts_at ASC`
 
   try {
     const classes = await sql.unsafe(query, params)
